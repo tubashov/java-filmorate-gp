@@ -65,6 +65,25 @@ CREATE TABLE IF NOT EXISTS directors_films (
     FOREIGN KEY (film_id) REFERENCES films(id) ON DELETE CASCADE
 );
 
+-- Отзывы
+CREATE TABLE reviews (
+    review_id BIGSERIAL PRIMARY KEY,
+    content TEXT NOT NULL,
+    is_positive BOOLEAN NOT NULL,
+    user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    film_id BIGINT NOT NULL REFERENCES films(film_id) ON DELETE CASCADE,
+    useful INT DEFAULT 0
+);
+
+-- Оценка отзывов
+CREATE TABLE review_likes (
+    review_id BIGINT NOT NULL REFERENCES reviews(review_id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    is_useful BOOLEAN NOT NULL,
+    PRIMARY KEY (review_id, user_id)
+);
+
+-- Индексы
 CREATE INDEX IF NOT EXISTS idx_films_mpa ON films(mpa_id);
 CREATE INDEX IF NOT EXISTS idx_film_genres_film ON film_genres(film_id);
 CREATE INDEX IF NOT EXISTS idx_film_genres_genre ON film_genres(genre_id);
