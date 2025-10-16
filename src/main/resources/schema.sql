@@ -93,3 +93,5 @@ CREATE INDEX IF NOT EXISTS idx_friendships_user ON friendships(user_id);
 CREATE INDEX IF NOT EXISTS idx_friendships_friend ON friendships(friend_id);
 CREATE INDEX IF NOT EXISTS idx_directors_films_director ON directors_films(director_id);
 CREATE INDEX IF NOT EXISTS idx_directors_films_film ON directors_films(film_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_film_id ON reviews(film_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_useful ON reviews(useful DESC);
