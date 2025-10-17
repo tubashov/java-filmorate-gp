@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.storage.review;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -11,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class ReviewDbStorage implements ReviewStorage {
@@ -19,6 +21,9 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public Review create(Review review) {
+        log.info("Создание нового отзыва пользователем {} для фильма {}",
+                review.getUserId(), review.getFilmId());
+
         String sql = "INSERT INTO reviews (content, is_positive, user_id, film_id, useful) " +
                 "VALUES (?, ?, ?, ?, 0)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -34,23 +39,34 @@ public class ReviewDbStorage implements ReviewStorage {
 
         review.setId(keyHolder.getKey().longValue());
         review.setUseful(0);
+
+        log.info("Отзыв успешно создан с id = {}", review.getId());
         return review;
     }
 
     @Override
     public Review update(Review review) {
+        log.info("Обновление отзыва с id = {}", review.getId());
+
         String sql = "UPDATE reviews SET content = ?, is_positive = ? WHERE review_id = ?";
         jdbcTemplate.update(sql, review.getContent(), review.getIsPositive(), review.getId());
-        return getById(review.getId()).orElseThrow();
+
+        Review updated = getById(review.getId()).orElseThrow();
+        log.info("Отзыв с id = {} успешно обновлён", review.getId());
+        return updated;
     }
 
     @Override
     public void delete(Long id) {
+        log.info("Удаление отзыва с id = {}", id);
         jdbcTemplate.update("DELETE FROM reviews WHERE review_id = ?", id);
+        log.info("Отзыв с id = {} успешно удалён", id);
     }
 
     @Override
     public Optional<Review> getById(Long id) {
+        log.info("Получение отзыва по id = {}", id);
+
         String sql = "SELECT * FROM reviews WHERE review_id = ?";
         List<Review> reviews = jdbcTemplate.query(sql, (rs, rowNum) -> {
             Review r = new Review();
@@ -63,11 +79,19 @@ public class ReviewDbStorage implements ReviewStorage {
             return r;
         }, id);
 
-        return reviews.isEmpty() ? Optional.empty() : Optional.of(reviews.get(0));
+        if (reviews.isEmpty()) {
+            log.warn("Отзыв с id = {} не найден", id);
+            return Optional.empty();
+        }
+
+        log.info("Отзыв с id = {} успешно найден", id);
+        return Optional.of(reviews.get(0));
     }
 
     @Override
     public List<Review> getAll(Long filmId, int count) {
+        log.info("Получение списка отзывов (filmId={}, count={})", filmId, count);
+
         String sql;
         Object[] params;
 
@@ -79,7 +103,7 @@ public class ReviewDbStorage implements ReviewStorage {
             params = new Object[]{count};
         }
 
-        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+        List<Review> reviews = jdbcTemplate.query(sql, (rs, rowNum) -> {
             Review r = new Review();
             r.setId(rs.getLong("review_id"));
             r.setContent(rs.getString("content"));
@@ -89,22 +113,35 @@ public class ReviewDbStorage implements ReviewStorage {
             r.setUseful(rs.getInt("useful"));
             return r;
         }, params);
+
+        log.info("Найдено {} отзывов", reviews.size());
+        return reviews;
     }
 
     private void vote(Long reviewId, Long userId, boolean useful) {
+        log.info("Пользователь {} {} отзыв {}", userId,
+                useful ? "поставил лайк" : "поставил дизлайк", reviewId);
+
         String insertSql = "INSERT INTO review_likes (review_id, user_id, is_useful) VALUES (?, ?, ?)";
         jdbcTemplate.update(insertSql, reviewId, userId, useful);
 
         int delta = useful ? 1 : -1;
         jdbcTemplate.update("UPDATE reviews SET useful = useful + ? WHERE review_id = ?", delta, reviewId);
+
+        log.info("Оценка пользователя {} учтена. Полезность отзыва {} изменена на {}", userId, reviewId, delta);
     }
 
     private void removeVote(Long reviewId, Long userId, boolean useful) {
+        log.info("Пользователь {} удалил {} у отзыва {}", userId,
+                useful ? "лайк" : "дизлайк", reviewId);
+
         String deleteSql = "DELETE FROM review_likes WHERE review_id = ? AND user_id = ? AND is_useful = ?";
         jdbcTemplate.update(deleteSql, reviewId, userId, useful);
 
         int delta = useful ? -1 : 1;
         jdbcTemplate.update("UPDATE reviews SET useful = useful + ? WHERE review_id = ?", delta, reviewId);
+
+        log.info("Удалена оценка пользователя {}. Полезность отзыва {} изменена на {}", userId, reviewId, delta);
     }
 
     @Override
