@@ -108,7 +108,6 @@ public class DirectorDbStorage implements DirectorStorage {
 
     @Override
     public void addDirectorsToFilm(Film film) {
-
     }
 
     @Override
