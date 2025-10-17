@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.List;
@@ -71,4 +72,13 @@ public class FilmController {
         log.info("Пользователь {} удаляет лайк фильма {}", userId, id);
         filmService.removeLike(id, userId);
     }
+
+    @GetMapping("/common")
+    public List<Film> getCommonFilms(@RequestParam("userId") Long userId,
+                                     @RequestParam("friendId") Long friendId) {
+        log.info("Получение общих фильмов для пользователей {} и {}", userId, friendId);
+        return filmService.getCommonLikedFilms(userId, friendId);
+    }
+
+
 }
