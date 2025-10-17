@@ -66,19 +66,19 @@ CREATE TABLE IF NOT EXISTS directors_films (
 );
 
 -- Отзывы
-CREATE TABLE reviews (
+CREATE TABLE IF NOT EXISTS reviews (
     review_id BIGSERIAL PRIMARY KEY,
     content TEXT NOT NULL,
     is_positive BOOLEAN NOT NULL,
-    user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    film_id BIGINT NOT NULL REFERENCES films(film_id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    film_id BIGINT NOT NULL REFERENCES films(id) ON DELETE CASCADE,
     useful INT DEFAULT 0
 );
 
 -- Оценка отзывов
-CREATE TABLE review_likes (
+CREATE TABLE IF NOT EXISTS review_likes (
     review_id BIGINT NOT NULL REFERENCES reviews(review_id) ON DELETE CASCADE,
-    user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     is_useful BOOLEAN NOT NULL,
     PRIMARY KEY (review_id, user_id)
 );
