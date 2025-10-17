@@ -99,7 +99,7 @@ public class DirectorDbStorage implements DirectorStorage {
     public List<Director> findFilmDirectors(Long filmId) {
         String sql = """
                 SELECT d.* FROM directors d
-                JOIN directors_films df ON d.id = df.director_id 
+                JOIN directors_films df ON d.id = df.director_id
                 WHERE df.film_id = ?
                 """;
         return jdbcTemplate.query(sql, (rs, rowNum) ->
