@@ -72,6 +72,7 @@ public class FilmService {
         validateDirectors(film);
         return filmStorage.update(film);
     }
+
     private void validateDirectors(Film film) {
         if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
             Set<Long> directorIds = film.getDirectors().stream()
