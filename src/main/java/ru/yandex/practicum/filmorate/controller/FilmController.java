@@ -71,4 +71,9 @@ public class FilmController {
         log.info("Пользователь {} удаляет лайк фильма {}", userId, id);
         filmService.removeLike(id, userId);
     }
+    @GetMapping("/director/{directorId}")
+    public List<Film> getFilmsListByDirectorSortedByLikesOrYear(@PathVariable Long directorId,
+                                                                @RequestParam String sortBy) {
+        return filmService.getFilmsListByDirector(directorId, sortBy);
+    }
 }
