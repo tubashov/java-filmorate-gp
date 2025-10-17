@@ -36,7 +36,7 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public void delete(Long id) {
         users.remove(id);
-    }
+    }//
 
     @Override
     public Map<Long, User> getUsersByIds(Set<Long> userIds) {
