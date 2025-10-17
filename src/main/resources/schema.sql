@@ -31,7 +31,6 @@ CREATE TABLE IF NOT EXISTS directors (
     name VARCHAR(200) NOT NULL UNIQUE
 );
 
--- Таблицы связей (остаются без изменений)
 CREATE TABLE IF NOT EXISTS film_genres (
     film_id BIGINT NOT NULL,
     genre_id BIGINT NOT NULL,
@@ -66,7 +65,6 @@ CREATE TABLE IF NOT EXISTS directors_films (
     FOREIGN KEY (film_id) REFERENCES films(id) ON DELETE CASCADE
 );
 
--- Индексы
 CREATE INDEX IF NOT EXISTS idx_films_mpa ON films(mpa_id);
 CREATE INDEX IF NOT EXISTS idx_film_genres_film ON film_genres(film_id);
 CREATE INDEX IF NOT EXISTS idx_film_genres_genre ON film_genres(genre_id);
