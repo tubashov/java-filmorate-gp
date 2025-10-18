@@ -66,7 +66,7 @@ public class FriendshipDbStorage implements FriendshipStorage {
     }
 
     @Override
-    public boolean areFriends (Long userId, Long friendId){
+    public boolean areFriends(Long userId, Long friendId) {
         String sql = "SELECT COUNT(*) FROM friendships WHERE user_id = ? AND friend_id = ?";
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, userId, friendId);
         return count != null && count > 0;
