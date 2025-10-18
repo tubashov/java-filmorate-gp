@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.model.Review;
 
 import java.sql.PreparedStatement;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Slf4j
@@ -21,11 +22,9 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public Review create(Review review) {
-        log.info("Создание нового отзыва пользователем {} для фильма {}",
-                review.getUserId(), review.getFilmId());
+        log.info("Создание нового отзыва пользователем {} для фильма {}", review.getUserId(), review.getFilmId());
 
-        String sql = "INSERT INTO reviews (content, is_positive, user_id, film_id, useful) " +
-                "VALUES (?, ?, ?, ?, 0)";
+        String sql = "INSERT INTO reviews (content, is_positive, user_id, film_id, useful) VALUES (?, ?, ?, ?, 0)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
@@ -49,24 +48,26 @@ public class ReviewDbStorage implements ReviewStorage {
         log.info("Обновление отзыва с id = {}", review.getReviewId());
 
         String sql = "UPDATE reviews SET content = ?, is_positive = ? WHERE review_id = ?";
-        jdbcTemplate.update(sql, review.getContent(), review.getIsPositive(), review.getReviewId());
+        int updated = jdbcTemplate.update(sql, review.getContent(), review.getIsPositive(), review.getReviewId());
+        if (updated == 0) {
+            throw new NoSuchElementException("Отзыв не найден");
+        }
 
-        Review updated = getById(review.getReviewId()).orElseThrow();
-        log.info("Отзыв с id = {} успешно обновлён", review.getReviewId());
-        return updated;
+        return getById(review.getReviewId()).orElseThrow();
     }
 
     @Override
     public void delete(Long id) {
         log.info("Удаление отзыва с id = {}", id);
-        jdbcTemplate.update("DELETE FROM reviews WHERE review_id = ?", id);
+        int deleted = jdbcTemplate.update("DELETE FROM reviews WHERE review_id = ?", id);
+        if (deleted == 0) {
+            throw new NoSuchElementException("Отзыв не найден");
+        }
         log.info("Отзыв с id = {} успешно удалён", id);
     }
 
     @Override
     public Optional<Review> getById(Long id) {
-        log.info("Получение отзыва по id = {}", id);
-
         String sql = "SELECT * FROM reviews WHERE review_id = ?";
         List<Review> reviews = jdbcTemplate.query(sql, (rs, rowNum) -> {
             Review r = new Review();
@@ -79,19 +80,11 @@ public class ReviewDbStorage implements ReviewStorage {
             return r;
         }, id);
 
-        if (reviews.isEmpty()) {
-            log.warn("Отзыв с id = {} не найден", id);
-            return Optional.empty();
-        }
-
-        log.info("Отзыв с id = {} успешно найден", id);
-        return Optional.of(reviews.get(0));
+        return reviews.isEmpty() ? Optional.empty() : Optional.of(reviews.get(0));
     }
 
     @Override
     public List<Review> getAll(Long filmId, int count) {
-        log.info("Получение списка отзывов (filmId={}, count={})", filmId, count);
-
         String sql;
         Object[] params;
 
@@ -103,7 +96,7 @@ public class ReviewDbStorage implements ReviewStorage {
             params = new Object[]{count};
         }
 
-        List<Review> reviews = jdbcTemplate.query(sql, (rs, rowNum) -> {
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
             Review r = new Review();
             r.setReviewId(rs.getLong("review_id"));
             r.setContent(rs.getString("content"));
@@ -113,35 +106,41 @@ public class ReviewDbStorage implements ReviewStorage {
             r.setUseful(rs.getInt("useful"));
             return r;
         }, params);
-
-        log.info("Найдено {} отзывов", reviews.size());
-        return reviews;
     }
 
     private void vote(Long reviewId, Long userId, boolean useful) {
-        log.info("Пользователь {} {} отзыв {}", userId,
-                useful ? "поставил лайк" : "поставил дизлайк", reviewId);
+        Review review = getById(reviewId).orElseThrow(() -> new NoSuchElementException("Отзыв не найден"));
 
-        String insertSql = "INSERT INTO review_likes (review_id, user_id, is_useful) VALUES (?, ?, ?)";
-        jdbcTemplate.update(insertSql, reviewId, userId, useful);
+        String checkSql = "SELECT is_useful FROM review_likes WHERE review_id = ? AND user_id = ?";
+        List<Boolean> existing = jdbcTemplate.query(checkSql, (rs, rowNum) -> rs.getBoolean("is_useful"), reviewId, userId);
 
-        int delta = useful ? 1 : -1;
-        jdbcTemplate.update("UPDATE reviews SET useful = useful + ? WHERE review_id = ?", delta, reviewId);
-
-        log.info("Оценка пользователя {} учтена. Полезность отзыва {} изменена на {}", userId, reviewId, delta);
+        if (existing.isEmpty()) {
+            // Пользователь еще не голосовал
+            String insertSql = "INSERT INTO review_likes (review_id, user_id, is_useful) VALUES (?, ?, ?)";
+            jdbcTemplate.update(insertSql, reviewId, userId, useful);
+            int delta = useful ? 1 : -1;
+            jdbcTemplate.update("UPDATE reviews SET useful = useful + ? WHERE review_id = ?", delta, reviewId);
+        } else if (existing.get(0) != useful) {
+            // Пользователь меняет голос
+            String updateSql = "UPDATE review_likes SET is_useful = ? WHERE review_id = ? AND user_id = ?";
+            jdbcTemplate.update(updateSql, useful, reviewId, userId);
+            int delta = useful ? 2 : -2; // смена с дизлайка на лайк (+2) или лайк на дизлайк (-2)
+            jdbcTemplate.update("UPDATE reviews SET useful = useful + ? WHERE review_id = ?", delta, reviewId);
+        }
+        // если пользователь повторно ставит такой же лайк/дизлайк, ничего не делаем
     }
 
     private void removeVote(Long reviewId, Long userId, boolean useful) {
-        log.info("Пользователь {} удалил {} у отзыва {}", userId,
-                useful ? "лайк" : "дизлайк", reviewId);
+        Review review = getById(reviewId).orElseThrow(() -> new NoSuchElementException("Отзыв не найден"));
 
         String deleteSql = "DELETE FROM review_likes WHERE review_id = ? AND user_id = ? AND is_useful = ?";
-        jdbcTemplate.update(deleteSql, reviewId, userId, useful);
+        int deleted = jdbcTemplate.update(deleteSql, reviewId, userId, useful);
 
-        int delta = useful ? -1 : 1;
-        jdbcTemplate.update("UPDATE reviews SET useful = useful + ? WHERE review_id = ?", delta, reviewId);
-
-        log.info("Удалена оценка пользователя {}. Полезность отзыва {} изменена на {}", userId, reviewId, delta);
+        if (deleted > 0) {
+            int delta = useful ? -1 : 1;
+            jdbcTemplate.update("UPDATE reviews SET useful = useful + ? WHERE review_id = ?", delta, reviewId);
+        }
+        // если пользователь не ставил такой голос, ничего не делаем
     }
 
     @Override

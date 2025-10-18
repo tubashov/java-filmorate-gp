@@ -36,18 +36,18 @@ public class ReviewController {
     }
 
     // Удалить отзыв по ID.
-    @DeleteMapping("/{id}")
-    public void deleteReview(@PathVariable Long id) {
-        log.info("Получен запрос на удаление отзыва с id={}", id);
-        reviewService.deleteReview(id);
-        log.info("Отзыв с id={} удалён", id);
+    @DeleteMapping("/{reviewId}")
+    public void deleteReview(@PathVariable Long reviewId) {
+        log.info("Получен запрос на удаление отзыва с reviewId={}", reviewId);
+        reviewService.deleteReview(reviewId);
+        log.info("Отзыв с reviewId={} удалён", reviewId);
     }
 
     // Получить отзыв по ID.
-    @GetMapping("/{id}")
-    public Review getReview(@PathVariable Long id) {
-        log.info("Получен запрос на получение отзыва с id={}", id);
-        return reviewService.getReviewById(id);
+    @GetMapping("/{reviewId}")
+    public Review getReview(@PathVariable Long reviewId) {
+        log.info("Получен запрос на получение отзыва с reviewId={}", reviewId);
+        return reviewService.getReviewById(reviewId);
     }
 
     // Если указан filmId — вернуть отзывы только этого фильма. Отзывы сортируются по полезности.
@@ -59,30 +59,30 @@ public class ReviewController {
     }
 
     // Добавить лайк (оценка "полезно") отзыву.
-    @PutMapping("/{id}/like/{userId}")
-    public void addLike(@PathVariable Long id, @PathVariable Long userId) {
-        log.info("Пользователь {} отметил отзыв {} как полезный", userId, id);
-        reviewService.addLike(id, userId);
+    @PutMapping("/{reviewId}/like/{userId}")
+    public void addLike(@PathVariable Long reviewId, @PathVariable Long userId) {
+        log.info("Пользователь {} отметил отзыв {} как полезный", userId, reviewId);
+        reviewService.addLike(reviewId, userId);
     }
 
     // Добавить дизлайк (оценка "бесполезно") отзыву.
-    @PutMapping("/{id}/dislike/{userId}")
-    public void addDislike(@PathVariable Long id, @PathVariable Long userId) {
-        log.info("Пользователь {} отметил отзыв {} как бесполезный", userId, id);
-        reviewService.addDislike(id, userId);
+    @PutMapping("/{reviewId}/dislike/{userId}")
+    public void addDislike(@PathVariable Long reviewId, @PathVariable Long userId) {
+        log.info("Пользователь {} отметил отзыв {} как бесполезный", userId, reviewId);
+        reviewService.addDislike(reviewId, userId);
     }
 
     // Удалить лайк у отзыва.
-    @DeleteMapping("/{id}/like/{userId}")
-    public void removeLike(@PathVariable Long id, @PathVariable Long userId) {
-        log.info("Пользователь {} удалил лайк у отзыва {}", userId, id);
-        reviewService.removeLike(id, userId);
+    @DeleteMapping("/{reviewId}/like/{userId}")
+    public void removeLike(@PathVariable Long reviewId, @PathVariable Long userId) {
+        log.info("Пользователь {} удалил лайк у отзыва {}", userId, reviewId);
+        reviewService.removeLike(reviewId, userId);
     }
 
     // Удалить дизлайк у отзыва.
-    @DeleteMapping("/{id}/dislike/{userId}")
-    public void removeDislike(@PathVariable Long id, @PathVariable Long userId) {
-        log.info("Пользователь {} удалил дизлайк у отзыва {}", userId, id);
-        reviewService.removeDislike(id, userId);
+    @DeleteMapping("/{reviewId}/dislike/{userId}")
+    public void removeDislike(@PathVariable Long reviewId, @PathVariable Long userId) {
+        log.info("Пользователь {} удалил дизлайк у отзыва {}", userId, reviewId);
+        reviewService.removeDislike(reviewId, userId);
     }
 }

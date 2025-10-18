@@ -22,23 +22,20 @@ public class ReviewService {
     // Создание нового отзыва
     public Review addReview(Review review) {
         validateReview(review);
+        review.setUseful(0); // Изначально полезность = 0
         return reviewStorage.create(review);
     }
 
     // Обновление существующего отзыва
     public Review updateReview(Review review) {
-        if (!reviewStorage.getById(review.getReviewId()).isPresent()) {
-            throw new NoSuchElementException("Отзыв не найден");
-        }
+        ensureReviewExists(review.getReviewId());
         validateReview(review);
         return reviewStorage.update(review);
     }
 
     // Удаление отзыва
     public void deleteReview(Long reviewId) {
-        if (!reviewStorage.getById(reviewId).isPresent()) {
-            throw new NoSuchElementException("Отзыв не найден");
-        }
+        ensureReviewExists(reviewId);
         reviewStorage.delete(reviewId);
     }
 
@@ -55,33 +52,40 @@ public class ReviewService {
 
     // Добавить лайк
     public void addLike(Long reviewId, Long userId) {
-        ensureReviewExists(reviewId);
+        Review review = ensureReviewExists(reviewId);
         reviewStorage.addLike(reviewId, userId);
+        review.setUseful(review.getUseful() + 1);
+        reviewStorage.update(review);
     }
 
     // Добавить дизлайк
     public void addDislike(Long reviewId, Long userId) {
-        ensureReviewExists(reviewId);
+        Review review = ensureReviewExists(reviewId);
         reviewStorage.addDislike(reviewId, userId);
+        review.setUseful(review.getUseful() - 1);
+        reviewStorage.update(review);
     }
 
     // Удалить лайк
     public void removeLike(Long reviewId, Long userId) {
-        ensureReviewExists(reviewId);
+        Review review = ensureReviewExists(reviewId);
         reviewStorage.removeLike(reviewId, userId);
+        review.setUseful(review.getUseful() - 1);
+        reviewStorage.update(review);
     }
 
     // Удалить дизлайк
     public void removeDislike(Long reviewId, Long userId) {
-        ensureReviewExists(reviewId);
+        Review review = ensureReviewExists(reviewId);
         reviewStorage.removeDislike(reviewId, userId);
+        review.setUseful(review.getUseful() + 1);
+        reviewStorage.update(review);
     }
 
-    // Проверка существования отзыва
-    private void ensureReviewExists(Long reviewId) {
-        if (!reviewStorage.getById(reviewId).isPresent()) {
-            throw new NoSuchElementException("Отзыв не найден");
-        }
+    // Проверка существования отзыва и возврат объекта
+    private Review ensureReviewExists(Long reviewId) {
+        return reviewStorage.getById(reviewId)
+                .orElseThrow(() -> new NoSuchElementException("Отзыв не найден"));
     }
 
     // Валидация отзыва перед созданием/обновлением
