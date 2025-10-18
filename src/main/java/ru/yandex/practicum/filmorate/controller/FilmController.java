@@ -10,16 +10,6 @@ import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.List;
 
-/**
- * {@code GET /films} - Получение фильмов<br/>
- * {@code GET /films/{id}} - Получение фильма<br/>
- * {@code GET /films/popular} - Получение популярных фильмов<br/>
- * {@code POST /films} - Создание фильма<br/>
- * {@code PUT /films} - Редактирование фильма<br/>
- * {@code PUT /films/{id}/like/{userId}} - Лайк фильму<br/>
- * {@code DELETE /films/{id}/like/{userId}} - Удаление лайка<br/>
- */
-
 @RestController
 @RequestMapping("/films")
 @Slf4j
@@ -81,4 +71,10 @@ public class FilmController {
     }
 
 
+
+    @GetMapping("/director/{directorId}")
+    public List<Film> getFilmsListByDirectorSortedByLikesOrYear(@PathVariable Long directorId,
+                                                                @RequestParam String sortBy) {
+        return filmService.getFilmsListByDirector(directorId, sortBy);
+    }
 }
