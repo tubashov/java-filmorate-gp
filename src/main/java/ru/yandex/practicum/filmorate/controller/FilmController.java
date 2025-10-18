@@ -70,8 +70,6 @@ public class FilmController {
         return filmService.getCommonLikedFilms(userId, friendId);
     }
 
-
-
     @GetMapping("/director/{directorId}")
     public List<Film> getFilmsListByDirectorSortedByLikesOrYear(@PathVariable Long directorId,
                                                                 @RequestParam String sortBy) {
