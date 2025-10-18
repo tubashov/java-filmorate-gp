@@ -127,6 +127,47 @@ public class FilmService {
                 .collect(Collectors.toList());
     }
 
+    public List<Film> searchFilms(String query, String by) {
+        if (query == null || query.trim().isEmpty()) {
+            log.info("Пустой поисковый запрос - возвращаем пустой результат");
+            return List.of();
+        }
+
+        String[] searchParams = by.split(",");
+
+        boolean searchByTitle = false; //флаг на название
+        boolean searchByDirector = false; //флаг на режиссера
+
+        for (String param : searchParams) {
+            String trimmedParam = param.trim().toLowerCase();
+
+            if ("title".equals(trimmedParam)) {
+                searchByTitle = true;
+            } else if ("director".equals(trimmedParam)) {
+                searchByDirector = true;
+            }
+        }
+
+        if (!searchByTitle && !searchByDirector) {
+            searchByTitle = true;
+            searchByDirector = true;
+        }
+
+        log.info("Поиск фильмов по запросу: '{}', title: {}, director: {}",
+                query, searchByTitle, searchByDirector);
+
+        List<Film> searchResults = filmStorage.searchFilms(query, searchByTitle, searchByDirector);
+
+        searchResults.sort((f1, f2) -> Integer.compare(
+                f2.getLikes().size(),
+                f1.getLikes().size()
+        ));
+
+        log.info("Найдено {} фильмов по запросу '{}'", searchResults.size(), query);
+
+        return searchResults;
+    }
+
     private void validateFilm(Film film) {
         if (film.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
             FilmService.log.warn("Дата релиза {} раньше минимально допустимой {}", film.getReleaseDate(), MIN_RELEASE_DATE);
