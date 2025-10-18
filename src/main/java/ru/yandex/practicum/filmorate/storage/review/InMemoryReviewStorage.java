@@ -14,15 +14,15 @@ public class InMemoryReviewStorage implements ReviewStorage {
 
     @Override
     public Review create(Review review) {
-        review.setId(nextId++);
+        review.setReviewId(nextId++);
         review.setUseful(0);
-        reviews.put(review.getId(), review);
+        reviews.put(review.getReviewId(), review);
         return review;
     }
 
     @Override
     public Review update(Review review) {
-        Review existing = reviews.get(review.getId());
+        Review existing = reviews.get(review.getReviewId());
         if (existing == null) {
             throw new NoSuchElementException("Отзыв не найден");
         }

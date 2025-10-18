@@ -37,22 +37,22 @@ public class ReviewDbStorage implements ReviewStorage {
             return ps;
         }, keyHolder);
 
-        review.setId(keyHolder.getKey().longValue());
+        review.setReviewId(keyHolder.getKey().longValue());
         review.setUseful(0);
 
-        log.info("Отзыв успешно создан с id = {}", review.getId());
+        log.info("Отзыв успешно создан с id = {}", review.getReviewId());
         return review;
     }
 
     @Override
     public Review update(Review review) {
-        log.info("Обновление отзыва с id = {}", review.getId());
+        log.info("Обновление отзыва с id = {}", review.getReviewId());
 
         String sql = "UPDATE reviews SET content = ?, is_positive = ? WHERE review_id = ?";
-        jdbcTemplate.update(sql, review.getContent(), review.getIsPositive(), review.getId());
+        jdbcTemplate.update(sql, review.getContent(), review.getIsPositive(), review.getReviewId());
 
-        Review updated = getById(review.getId()).orElseThrow();
-        log.info("Отзыв с id = {} успешно обновлён", review.getId());
+        Review updated = getById(review.getReviewId()).orElseThrow();
+        log.info("Отзыв с id = {} успешно обновлён", review.getReviewId());
         return updated;
     }
 
@@ -70,7 +70,7 @@ public class ReviewDbStorage implements ReviewStorage {
         String sql = "SELECT * FROM reviews WHERE review_id = ?";
         List<Review> reviews = jdbcTemplate.query(sql, (rs, rowNum) -> {
             Review r = new Review();
-            r.setId(rs.getLong("review_id"));
+            r.setReviewId(rs.getLong("review_id"));
             r.setContent(rs.getString("content"));
             r.setIsPositive(rs.getBoolean("is_positive"));
             r.setUserId(rs.getLong("user_id"));
@@ -105,7 +105,7 @@ public class ReviewDbStorage implements ReviewStorage {
 
         List<Review> reviews = jdbcTemplate.query(sql, (rs, rowNum) -> {
             Review r = new Review();
-            r.setId(rs.getLong("review_id"));
+            r.setReviewId(rs.getLong("review_id"));
             r.setContent(rs.getString("content"));
             r.setIsPositive(rs.getBoolean("is_positive"));
             r.setUserId(rs.getLong("user_id"));

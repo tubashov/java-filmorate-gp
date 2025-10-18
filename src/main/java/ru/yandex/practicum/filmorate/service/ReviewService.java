@@ -27,7 +27,7 @@ public class ReviewService {
 
     // Обновление существующего отзыва
     public Review updateReview(Review review) {
-        if (!reviewStorage.getById(review.getId()).isPresent()) {
+        if (!reviewStorage.getById(review.getReviewId()).isPresent()) {
             throw new NoSuchElementException("Отзыв не найден");
         }
         validateReview(review);
