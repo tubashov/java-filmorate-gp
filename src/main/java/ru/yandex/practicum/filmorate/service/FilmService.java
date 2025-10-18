@@ -111,7 +111,7 @@ public class FilmService {
 
         Set<Long> commonFilmIds = likeStorage.getCommonLikedFilms(userId, friendId);
 
-        if (commonFilmIds.isEmpty()){
+        if (commonFilmIds.isEmpty()) {
             log.warn("У пользователей {} и {} нет общих понравившихся фильмов", userId, friendId);
             return Collections.emptyList(); // вернём пустой список
         }
@@ -177,7 +177,6 @@ public class FilmService {
                     f1.getLikes().size()
             ));
         }
-
         return directorFilms;
     }
 }
