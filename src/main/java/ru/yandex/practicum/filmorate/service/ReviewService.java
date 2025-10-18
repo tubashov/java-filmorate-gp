@@ -3,13 +3,14 @@ package ru.yandex.practicum.filmorate.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.review.ReviewStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @Service
 public class ReviewService {
@@ -48,7 +49,7 @@ public class ReviewService {
 
     public Review getReviewById(Long reviewId) {
         return reviewStorage.getById(reviewId)
-                .orElseThrow(() -> new NoSuchElementException("Отзыв не найден"));
+                .orElseThrow(() -> new NotFoundException("Отзыв не найден"));
     }
 
     public List<Review> getReviews(Long filmId, int count) {
@@ -81,27 +82,27 @@ public class ReviewService {
 
     private Review ensureReviewExists(Long reviewId) {
         return reviewStorage.getById(reviewId)
-                .orElseThrow(() -> new NoSuchElementException("Отзыв не найден"));
+                .orElseThrow(() -> new NotFoundException("Отзыв не найден"));
     }
 
     private void ensureUserExists(Long userId) {
         if (userStorage.getById(userId).isEmpty()) {
-            throw new NoSuchElementException("Пользователь не найден");
+            throw new NotFoundException("Пользователь не найден");
         }
     }
 
     private void ensureFilmExists(Long filmId) {
         if (filmStorage.getById(filmId).isEmpty()) {
-            throw new NoSuchElementException("Фильм не найден");
+            throw new NotFoundException("Фильм не найден");
         }
     }
 
     private void validateReview(Review review) {
         if (review.getContent() == null || review.getContent().isBlank()) {
-            throw new IllegalArgumentException("Содержание отзыва не может быть пустым");
+            throw new ValidationException("Содержание отзыва не может быть пустым");
         }
         if (review.getUserId() == null || review.getFilmId() == null) {
-            throw new IllegalArgumentException("Отзыв должен принадлежать пользователю и фильму");
+            throw new ValidationException("Отзыв должен принадлежать пользователю и фильму");
         }
     }
 }
