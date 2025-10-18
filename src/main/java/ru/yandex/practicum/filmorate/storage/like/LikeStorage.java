@@ -9,5 +9,5 @@ public interface LikeStorage {
 
     int getLikesCount(Long filmId);
 
-    Set<Long> getCommonLikedFilms (Long userId1, Long userId2);
+    Set<Long> getCommonLikedFilms(Long userId1, Long userId2);
 }
