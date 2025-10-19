@@ -19,8 +19,6 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static java.lang.Math.log;
-
 @Service
 @Slf4j
 public class FilmService {
