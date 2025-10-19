@@ -19,8 +19,6 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static java.lang.Math.log;
-
 @Service
 @Slf4j
 public class FilmService {
@@ -103,6 +101,25 @@ public class FilmService {
                 ))
                 .limit(count)
                 .collect(Collectors.toList());
+    }
+
+    public List<Film> getPopularFilmsByGenreAndYear(int count, Long genreId, Integer year) {
+        genreStorage.getById(genreId)
+                .orElseThrow(() -> new NotFoundException("Жанр с ID " + genreId + " не найден"));
+
+        return filmStorage.getPopularFilmsByGenreAndYear(count, genreId, year);
+    }
+
+    public List<Film> getPopularFilmsByGenre(int count, Long genreId) {
+        genreStorage.getById(genreId)
+                .orElseThrow(() -> new NotFoundException("Жанр с ID " + genreId + " не найден"));
+
+        return filmStorage.getPopularFilmsByGenre(count, genreId);
+    }
+
+    public List<Film> getPopularFilmsByYear(int count, Integer year) {
+
+        return filmStorage.getPopularFilmsByYear(count, year);
     }
 
     public List<Film> getCommonLikedFilms(Long userId, Long friendId) {
