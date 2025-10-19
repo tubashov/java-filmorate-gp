@@ -105,6 +105,28 @@ public class FilmService {
                 .collect(Collectors.toList());
     }
 
+    public List<Film> getCommonLikedFilms(Long userId, Long friendId) {
+        userService.getUserById(userId);
+        userService.getUserById(friendId);
+
+        Set<Long> commonFilmIds = likeStorage.getCommonLikedFilms(userId, friendId);
+
+        if (commonFilmIds.isEmpty()) {
+            log.warn("У пользователей {} и {} нет общих понравившихся фильмов", userId, friendId);
+            return Collections.emptyList(); // вернём пустой список
+        }
+
+        log.info("Найдено {} общих фильмов", commonFilmIds.size());
+
+        return commonFilmIds.stream()
+                .map(this::getFilmById)
+                .sorted((f1, f2) -> Integer.compare(
+                        f2.getLikes().size(),
+                        f1.getLikes().size()
+                ))
+                .collect(Collectors.toList());
+    }
+
     private void validateFilm(Film film) {
         if (film.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
             FilmService.log.warn("Дата релиза {} раньше минимально допустимой {}", film.getReleaseDate(), MIN_RELEASE_DATE);
@@ -155,7 +177,6 @@ public class FilmService {
                     f1.getLikes().size()
             ));
         }
-
         return directorFilms;
     }
 

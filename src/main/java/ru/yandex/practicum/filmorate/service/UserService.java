@@ -1,9 +1,11 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.friendship.FriendshipStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -12,6 +14,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class UserService {
     private final UserStorage userStorage;
     private final FriendshipStorage friendshipStorage;
@@ -48,7 +51,8 @@ public class UserService {
     public void addFriend(Long userId, Long friendId) {
         getUserById(userId);
         getUserById(friendId);
-
+        validateAddFriend(userId, friendId);
+        log.info("Пользователь {} добавляет в друзья пользователя {}", userId, friendId);
         friendshipStorage.addFriend(userId, friendId);
     }
 
@@ -111,5 +115,17 @@ public class UserService {
     public void deleteUserById(long id) {
         getUserById(id);
         userStorage.deleteUserById(id);
+    }
+
+    private void validateAddFriend(Long userId, Long friendId) {
+        if (userId.equals(friendId)) {
+            log.warn("Пользователь {} пытается добавить самого себя в друзья", userId);
+            throw new ValidationException("Нельзя добавить самого себя в друзья");
+        }
+
+        if (friendshipStorage.areFriends(userId, friendId)) {
+            log.warn("Пользователи {} и {} уже являются друзьями", userId, friendId);
+            throw new ValidationException("Пользователи уже являются друзьями");
+        }
     }
 }
