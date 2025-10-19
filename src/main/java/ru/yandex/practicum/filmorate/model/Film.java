@@ -1,10 +1,12 @@
 package ru.yandex.practicum.filmorate.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -18,6 +20,7 @@ public class Film {
     private String description;
 
     @NotNull(message = "Должна быть указана дата релиза фильма")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate releaseDate;
 
     @Positive(message = "Продолжительность фильма должна быть положительным числом")
@@ -26,4 +29,6 @@ public class Film {
     private Mpa mpa;
     private Set<Genre> genres = new LinkedHashSet<>();
     private Set<Long> likes = new LinkedHashSet<>();
+    private List<Director> directors;
+
 }
