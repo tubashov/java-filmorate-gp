@@ -15,4 +15,10 @@ public interface FilmStorage {
     Film update(Film film);
 
     void delete(Long id);
+
+    List<Film> getPopularFilmsByGenreAndYear(int count, Long genreId, Integer year);
+
+    List<Film> getPopularFilmsByGenre(int count, Long genreId);
+
+    List<Film> getPopularFilmsByYear(int count, Integer year);
 }

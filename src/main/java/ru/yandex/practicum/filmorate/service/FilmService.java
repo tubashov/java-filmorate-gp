@@ -86,6 +86,24 @@ public class FilmService {
                 .collect(Collectors.toList());
     }
 
+    public List<Film> getPopularFilmsByGenreAndYear(int count, Long genreId, Integer year) {
+        genreStorage.getById(genreId)
+                .orElseThrow(() -> new NotFoundException("Жанр с ID " + genreId + " не найден"));
+
+        return filmStorage.getPopularFilmsByGenreAndYear(count, genreId, year);
+    }
+
+    public List<Film> getPopularFilmsByGenre(int count, Long genreId) {
+        genreStorage.getById(genreId)
+                .orElseThrow(() -> new NotFoundException("Жанр с ID " + genreId + " не найден"));
+
+        return filmStorage.getPopularFilmsByGenre(count, genreId);
+    }
+
+    public List<Film> getPopularFilmsByYear(int count, Integer year) {
+        return filmStorage.getPopularFilmsByYear(count, year);
+    }
+
     private void validateFilm(Film film) {
         if (film.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
             log.warn("Дата релиза {} раньше минимально допустимой {}", film.getReleaseDate(), MIN_RELEASE_DATE);
