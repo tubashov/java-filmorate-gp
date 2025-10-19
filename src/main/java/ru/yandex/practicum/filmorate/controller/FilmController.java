@@ -62,6 +62,13 @@ public class FilmController {
         filmService.removeLike(id, userId);
     }
 
+    @GetMapping("/common")
+    public List<Film> getCommonFilms(@RequestParam("userId") Long userId,
+                                     @RequestParam("friendId") Long friendId) {
+        log.info("Получение общих фильмов для пользователей {} и {}", userId, friendId);
+        return filmService.getCommonLikedFilms(userId, friendId);
+    }
+
     @GetMapping("/director/{directorId}")
     public List<Film> getFilmsListByDirectorSortedByLikesOrYear(@PathVariable Long directorId,
                                                                 @RequestParam String sortBy) {
