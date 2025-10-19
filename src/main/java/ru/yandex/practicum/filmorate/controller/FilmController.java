@@ -28,7 +28,7 @@ public class FilmController {
 
     @GetMapping("/{id}")
     public Film getFilmById(@PathVariable Long id) {
-        log.info("Получение фильма с ID: {}", id);
+        log.info("Получение фильма с ID {}", id);
         return filmService.getFilmById(id);
     }
 
@@ -40,31 +40,38 @@ public class FilmController {
 
     @PostMapping
     public Film createFilm(@Valid @RequestBody Film film) {
-        log.info("Создание нового фильма: {}", film);
+        log.info("Создание нового фильма {}", film);
         return filmService.createFilm(film);
     }
 
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film film) {
-        log.info("Обновление фильма: {}", film);
+        log.info("Обновление фильма {}", film);
         return filmService.updateFilm(film);
     }
 
     @PutMapping("/{id}/like/{userId}")
     public void addLike(@PathVariable Long id, @PathVariable Long userId) {
-        log.info("Пользователь {} ставит лайк фильму {}", userId, id);
+        log.info("Пользователь c ID {} ставит лайк фильму {}", userId, id);
         filmService.addLike(id, userId);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
     public void removeLike(@PathVariable Long id, @PathVariable Long userId) {
-        log.info("Пользователь {} удаляет лайк фильма {}", userId, id);
+        log.info("Пользователь c ID {} удаляет лайк фильма {}", userId, id);
         filmService.removeLike(id, userId);
     }
 
     @GetMapping("/director/{directorId}")
     public List<Film> getFilmsListByDirectorSortedByLikesOrYear(@PathVariable Long directorId,
                                                                 @RequestParam String sortBy) {
+        log.info("Список фильмов режисёра с ID {}, отсортированный по популярности и годам  ", directorId);
         return filmService.getFilmsListByDirector(directorId, sortBy);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteFilm(@PathVariable long id) {
+        log.info("Фильм с ID {} удален", id);
+        filmService.deleteFilmById(id);
     }
 }

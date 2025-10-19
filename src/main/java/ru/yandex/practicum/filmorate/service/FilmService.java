@@ -158,4 +158,16 @@ public class FilmService {
 
         return directorFilms;
     }
+
+    public void deleteFilmById(Long id) {
+        getFilmById(id);
+
+        if (filmStorage instanceof ru.yandex.practicum.filmorate.storage.film.FilmDbStorage filmDbStorage) {
+            filmDbStorage.deleteFilmById(id);
+        } else {
+            filmStorage.delete(id);
+        }
+
+        log.info("Фильм с ID {} успешно удалён вместе с зависимыми данными (лайки, отзывы, жанры, режиссёры)", id);
+    }
 }

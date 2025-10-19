@@ -107,4 +107,9 @@ public class UserService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
+
+    public void deleteUserById(long id) {
+        getUserById(id);
+        userStorage.deleteUserById(id);
+    }
 }
