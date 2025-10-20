@@ -151,6 +151,25 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
+    @Override
+    public void deleteFilmById(Long filmId) {
+        String deleteLikesSql = "DELETE FROM film_likes WHERE film_id = ?";
+        jdbcTemplate.update(deleteLikesSql, filmId);
+
+        String deleteReviewsSql = "DELETE FROM reviews WHERE film_id = ?";
+        jdbcTemplate.update(deleteReviewsSql, filmId);
+
+        String deleteGenresSql = "DELETE FROM film_genres WHERE film_id = ?";
+        jdbcTemplate.update(deleteGenresSql, filmId);
+
+        String deleteDirectorsSql = "DELETE FROM directors_films WHERE film_id = ?";
+        jdbcTemplate.update(deleteDirectorsSql, filmId);
+
+        String deleteFilmSql = "DELETE FROM films WHERE id = ?";
+        jdbcTemplate.update(deleteFilmSql, filmId);
+    }
+
+
     private void loadDirectorsForFilms(List<Film> films) {
         if (films.isEmpty()) return;
 

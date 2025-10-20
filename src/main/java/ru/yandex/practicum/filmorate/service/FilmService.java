@@ -237,4 +237,12 @@ public class FilmService {
         }
         return directorFilms;
     }
+
+    public void deleteFilmById(Long id) {
+        getFilmById(id);
+
+        filmStorage.deleteFilmById(id);
+
+        log.info("Фильм с ID {} успешно удалён вместе с зависимыми данными (лайки, отзывы, жанры, режиссёры)", id);
+    }
 }

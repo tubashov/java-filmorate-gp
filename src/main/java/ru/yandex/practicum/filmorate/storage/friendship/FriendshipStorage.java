@@ -14,5 +14,7 @@ public interface FriendshipStorage {
 
     Map<Long, Set<Long>> getFriendsForUsers(Set<Long> userIds);
 
+    void removeAllFriendshipsForUser(Long userId);
+
     boolean areFriends(Long userId, Long friendId); // метод для проверки дружбы
 }

@@ -112,6 +112,11 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    public void deleteUserById(long id) {
+        getUserById(id);
+        userStorage.deleteUserById(id);
+    }
+
     private void validateAddFriend(Long userId, Long friendId) {
         if (userId.equals(friendId)) {
             log.warn("Пользователь {} пытается добавить самого себя в друзья", userId);
