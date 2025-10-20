@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.exception;
 
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -53,5 +54,12 @@ public class GlobalExceptionHandler {
     public ErrorResponse handleNullPointerException(NullPointerException exception) {
         log.error("NullPointerException: {}", exception.getMessage());
         return new ErrorResponse("Внутренняя ошибка сервера", "Ошибка обработки данных");
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponse handleDataAccessException(DataAccessException exception) {
+        log.error("Ошибка доступа к данным", exception);
+        return new ErrorResponse("Ошибка базы данных", "Произошла ошибка при обращении к базе данных");
     }
 }

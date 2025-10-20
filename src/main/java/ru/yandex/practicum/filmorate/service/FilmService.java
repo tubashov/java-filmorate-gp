@@ -19,8 +19,6 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static java.lang.Math.log;
-
 @Service
 @Slf4j
 public class FilmService {
@@ -105,6 +103,25 @@ public class FilmService {
                 .collect(Collectors.toList());
     }
 
+    public List<Film> getPopularFilmsByGenreAndYear(int count, Long genreId, Integer year) {
+        genreStorage.getById(genreId)
+                .orElseThrow(() -> new NotFoundException("Жанр с ID " + genreId + " не найден"));
+
+        return filmStorage.getPopularFilmsByGenreAndYear(count, genreId, year);
+    }
+
+    public List<Film> getPopularFilmsByGenre(int count, Long genreId) {
+        genreStorage.getById(genreId)
+                .orElseThrow(() -> new NotFoundException("Жанр с ID " + genreId + " не найден"));
+
+        return filmStorage.getPopularFilmsByGenre(count, genreId);
+    }
+
+    public List<Film> getPopularFilmsByYear(int count, Integer year) {
+
+        return filmStorage.getPopularFilmsByYear(count, year);
+    }
+
     public List<Film> getCommonLikedFilms(Long userId, Long friendId) {
         userService.getUserById(userId);
         userService.getUserById(friendId);
@@ -125,6 +142,47 @@ public class FilmService {
                         f1.getLikes().size()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    public List<Film> searchFilms(String query, String by) {
+        if (query == null || query.trim().isEmpty()) {
+            log.info("Пустой поисковый запрос - возвращаем пустой результат");
+            return List.of();
+        }
+
+        String[] searchParams = by.split(",");
+
+        boolean searchByTitle = false; //флаг на название
+        boolean searchByDirector = false; //флаг на режиссера
+
+        for (String param : searchParams) {
+            String trimmedParam = param.trim().toLowerCase();
+
+            if ("title".equals(trimmedParam)) {
+                searchByTitle = true;
+            } else if ("director".equals(trimmedParam)) {
+                searchByDirector = true;
+            }
+        }
+
+        if (!searchByTitle && !searchByDirector) {
+            searchByTitle = true;
+            searchByDirector = true;
+        }
+
+        log.info("Поиск фильмов по запросу: '{}', title: {}, director: {}",
+                query, searchByTitle, searchByDirector);
+
+        List<Film> searchResults = filmStorage.searchFilms(query, searchByTitle, searchByDirector);
+
+        searchResults.sort((f1, f2) -> Integer.compare(
+                f2.getLikes().size(),
+                f1.getLikes().size()
+        ));
+
+        log.info("Найдено {} фильмов по запросу '{}'", searchResults.size(), query);
+
+        return searchResults;
     }
 
     private void validateFilm(Film film) {

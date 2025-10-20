@@ -28,37 +28,52 @@ public class FilmController {
 
     @GetMapping("/{id}")
     public Film getFilmById(@PathVariable Long id) {
-        log.info("Получение фильма с ID {}", id);
+        log.info("Получение фильма с ID: {}", id);
         return filmService.getFilmById(id);
     }
 
     @GetMapping("/popular")
-    public List<Film> getPopularFilms(@RequestParam(defaultValue = "10", required = false) Integer count) {
-        log.info("Получение {} популярных фильмов, или если не задано, то 10", count);
-        return filmService.getPopularFilms(count);
+    public List<Film> getPopularFilms(
+            @RequestParam(defaultValue = "10", required = false) Integer count,
+            @RequestParam(required = false) Long genreId,
+            @RequestParam(required = false) Integer year) {
+
+        if (genreId != null && year != null) {
+            log.info("Получение {} популярных фильмов жанра ID:{} за {} год", count, genreId, year);
+            return filmService.getPopularFilmsByGenreAndYear(count, genreId, year);
+        } else if (genreId != null) {
+            log.info("Получение {} популярных фильмов жанра ID:{}", count, genreId);
+            return filmService.getPopularFilmsByGenre(count, genreId);
+        } else if (year != null) {
+            log.info("Получение {} популярных фильмов за {} год", count, year);
+            return filmService.getPopularFilmsByYear(count, year);
+        } else {
+            log.info("Получение {} популярных фильмов", count);
+            return filmService.getPopularFilms(count);
+        }
     }
 
     @PostMapping
     public Film createFilm(@Valid @RequestBody Film film) {
-        log.info("Создание нового фильма {}", film);
+        log.info("Создание нового фильма: {}", film);
         return filmService.createFilm(film);
     }
 
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film film) {
-        log.info("Обновление фильма {}", film);
+        log.info("Обновление фильма: {}", film);
         return filmService.updateFilm(film);
     }
 
     @PutMapping("/{id}/like/{userId}")
     public void addLike(@PathVariable Long id, @PathVariable Long userId) {
-        log.info("Пользователь c ID {} ставит лайк фильму {}", userId, id);
+        log.info("Пользователь {} ставит лайк фильму {}", userId, id);
         filmService.addLike(id, userId);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
     public void removeLike(@PathVariable Long id, @PathVariable Long userId) {
-        log.info("Пользователь c ID {} удаляет лайк фильма {}", userId, id);
+        log.info("Пользователь {} удаляет лайк фильма {}", userId, id);
         filmService.removeLike(id, userId);
     }
 
@@ -75,6 +90,16 @@ public class FilmController {
         log.info("Список фильмов режисёра с ID {}, отсортированный по популярности и годам  ", directorId);
         return filmService.getFilmsListByDirector(directorId, sortBy);
     }
+
+    //поиск фильма
+    @GetMapping("/search")
+    public List<Film> searchFilms(@RequestParam(required = false) String query,
+                                  @RequestParam(defaultValue = "title,director") String by) {
+        log.info("Поиск фильмов по запросу: '{}', параметры: {}", query, by);
+        return filmService.searchFilms(query, by);
+    }
+
+
 
     @DeleteMapping("/{id}")
     public void deleteFilm(@PathVariable long id) {

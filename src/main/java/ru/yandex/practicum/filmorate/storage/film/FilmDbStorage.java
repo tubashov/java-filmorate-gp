@@ -95,6 +95,63 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
+    public List<Film> getPopularFilmsByGenreAndYear(int count, Long genreId, Integer year) {
+        String sql = "SELECT f.*, m.name as mpa_name, " +
+                "COUNT(fl.user_id) as likes_count " +
+                "FROM films f " +
+                "LEFT JOIN mpa_ratings m ON f.mpa_id = m.id " +
+                "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
+                "LEFT JOIN film_genres fg ON f.id = fg.film_id " +
+                "WHERE fg.genre_id = ? " +
+                "AND EXTRACT(YEAR FROM f.release_date) = ? " +
+                "GROUP BY f.id, m.name " +
+                "ORDER BY likes_count DESC " +
+                "LIMIT ?";
+
+        List<Film> films = jdbcTemplate.query(sql, filmRowMapper, genreId, year, count);
+        loadGenresForFilms(films);
+        loadLikesForFilms(films);
+        return films;
+    }
+
+    @Override
+    public List<Film> getPopularFilmsByGenre(int count, Long genreId) {
+        String sql = "SELECT f.*, m.name as mpa_name, " +
+                "COUNT(fl.user_id) as likes_count " +
+                "FROM films f " +
+                "LEFT JOIN mpa_ratings m ON f.mpa_id = m.id " +
+                "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
+                "LEFT JOIN film_genres fg ON f.id = fg.film_id " +
+                "WHERE fg.genre_id = ? " +
+                "GROUP BY f.id, m.name " +
+                "ORDER BY likes_count DESC " +
+                "LIMIT ?";
+
+        List<Film> films = jdbcTemplate.query(sql, filmRowMapper, genreId, count);
+        loadGenresForFilms(films);
+        loadLikesForFilms(films);
+        return films;
+    }
+
+    @Override
+    public List<Film> getPopularFilmsByYear(int count, Integer year) {
+        String sql = "SELECT f.*, m.name as mpa_name, " +
+                "COUNT(fl.user_id) as likes_count " +
+                "FROM films f " +
+                "LEFT JOIN mpa_ratings m ON f.mpa_id = m.id " +
+                "LEFT JOIN film_likes fl ON f.id = fl.film_id " +
+                "WHERE EXTRACT(YEAR FROM f.release_date) = ? " +
+                "GROUP BY f.id, m.name " +
+                "ORDER BY likes_count DESC " +
+                "LIMIT ?";
+
+        List<Film> films = jdbcTemplate.query(sql, filmRowMapper, year, count);
+        loadGenresForFilms(films);
+        loadLikesForFilms(films);
+        return films;
+    }
+
+    @Override
     public void deleteFilmById(Long filmId) {
         String deleteLikesSql = "DELETE FROM film_likes WHERE film_id = ?";
         jdbcTemplate.update(deleteLikesSql, filmId);
@@ -234,5 +291,45 @@ public class FilmDbStorage implements FilmStorage {
                     .collect(Collectors.toList());
             jdbcTemplate.batchUpdate(sql, batchArgs);
         }
+    }
+
+    @Override
+    public List<Film> searchFilms(String query, boolean searchByTitle, boolean searchByDirector) {
+        String searchQuery = "%" + query.toLowerCase() + "%";
+
+        String sql = "SELECT DISTINCT f.*, m.name as mpa_name " +
+                "FROM films f " +
+                "LEFT JOIN mpa_ratings m ON f.mpa_id = m.id " +
+                "LEFT JOIN directors_films df ON f.id = df.film_id " +
+                "LEFT JOIN directors d ON df.director_id = d.id " +
+                "WHERE 1=1 ";
+
+        List<Object> params = new ArrayList<>();
+
+        if (searchByTitle && searchByDirector) {
+            sql += "AND (LOWER(f.name) LIKE ? OR LOWER(d.name) LIKE ?) ";
+            params.add(searchQuery);
+            params.add(searchQuery);
+
+        } else if (searchByTitle) {
+            sql += "AND LOWER(f.name) LIKE ? ";
+            params.add(searchQuery);
+
+        } else if (searchByDirector) {
+            sql += "AND LOWER(d.name) LIKE ? ";
+            params.add(searchQuery);
+
+        } else {
+
+            return Collections.emptyList();
+        }
+
+        List<Film> films = jdbcTemplate.query(sql, filmRowMapper, params.toArray());
+
+        loadGenresForFilms(films);
+        loadLikesForFilms(films);
+        loadDirectorsForFilms(films);
+
+        return films;
     }
 }
