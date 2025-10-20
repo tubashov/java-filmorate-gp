@@ -241,11 +241,7 @@ public class FilmService {
     public void deleteFilmById(Long id) {
         getFilmById(id);
 
-        if (filmStorage instanceof ru.yandex.practicum.filmorate.storage.film.FilmDbStorage filmDbStorage) {
-            filmDbStorage.deleteFilmById(id);
-        } else {
-            filmStorage.delete(id);
-        }
+        filmStorage.deleteFilmById(id);
 
         log.info("Фильм с ID {} успешно удалён вместе с зависимыми данными (лайки, отзывы, жанры, режиссёры)", id);
     }
