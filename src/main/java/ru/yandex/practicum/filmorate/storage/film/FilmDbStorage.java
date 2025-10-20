@@ -273,4 +273,44 @@ public class FilmDbStorage implements FilmStorage {
             jdbcTemplate.batchUpdate(sql, batchArgs);
         }
     }
+
+    @Override
+    public List<Film> searchFilms(String query, boolean searchByTitle, boolean searchByDirector) {
+        String searchQuery = "%" + query.toLowerCase() + "%";
+
+        String sql = "SELECT DISTINCT f.*, m.name as mpa_name " +
+                "FROM films f " +
+                "LEFT JOIN mpa_ratings m ON f.mpa_id = m.id " +
+                "LEFT JOIN directors_films df ON f.id = df.film_id " +
+                "LEFT JOIN directors d ON df.director_id = d.id " +
+                "WHERE 1=1 ";
+
+        List<Object> params = new ArrayList<>();
+
+        if (searchByTitle && searchByDirector) {
+            sql += "AND (LOWER(f.name) LIKE ? OR LOWER(d.name) LIKE ?) ";
+            params.add(searchQuery);
+            params.add(searchQuery);
+
+        } else if (searchByTitle) {
+            sql += "AND LOWER(f.name) LIKE ? ";
+            params.add(searchQuery);
+
+        } else if (searchByDirector) {
+            sql += "AND LOWER(d.name) LIKE ? ";
+            params.add(searchQuery);
+
+        } else {
+
+            return Collections.emptyList();
+        }
+
+        List<Film> films = jdbcTemplate.query(sql, filmRowMapper, params.toArray());
+
+        loadGenresForFilms(films);
+        loadLikesForFilms(films);
+        loadDirectorsForFilms(films);
+
+        return films;
+    }
 }
