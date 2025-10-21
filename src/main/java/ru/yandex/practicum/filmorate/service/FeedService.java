@@ -17,7 +17,7 @@ import java.util.List;
 public class FeedService {
 
     private final FeedStorage feedStorage;
-    private final UserStorage userStorage; // <-- используем UserStorage, а не UserService
+    private final UserStorage userStorage;
 
     public List<Event> getUserFeed(Long userId) {
         if (userStorage.getById(userId).isEmpty()) {
