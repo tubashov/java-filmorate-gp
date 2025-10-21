@@ -1,108 +1,169 @@
 package ru.yandex.practicum.filmorate.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Review;
-import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.review.ReviewStorage;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.List;
 
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class ReviewService {
 
     private final ReviewStorage reviewStorage;
-    private final UserStorage userStorage;
-    private final FilmStorage filmStorage;
-
-    @Autowired
-    public ReviewService(@Qualifier("reviewDbStorage") ReviewStorage reviewStorage,
-                         UserStorage userStorage,
-                         FilmStorage filmStorage) {
-        this.reviewStorage = reviewStorage;
-        this.userStorage = userStorage;
-        this.filmStorage = filmStorage;
-    }
+    private final UserService userService;
+    private final FilmService filmService;
+    private final FeedService feedService;
 
     public Review addReview(Review review) {
-        validateReview(review);
-        ensureUserExists(review.getUserId());
-        ensureFilmExists(review.getFilmId());
+        validateUser(review.getUserId());
+        validateFilm(review.getFilmId());
         review.setUseful(0);
-        return reviewStorage.create(review);
+        Review created = reviewStorage.create(review);
+
+        feedService.addEvent(new Event(
+                null,
+                created.getUserId(),
+                created.getReviewId(),
+                Event.EventType.REVIEW,
+                Event.Operation.ADD,
+                System.currentTimeMillis()
+        ));
+
+        log.info("Review added: {}", created);
+        return created;
     }
 
     public Review updateReview(Review review) {
-        ensureReviewExists(review.getReviewId());
-        validateReview(review);
-        return reviewStorage.update(review);
+        Review existing = getReviewById(review.getReviewId());
+        validateUser(review.getUserId());
+        validateFilm(review.getFilmId());
+
+        existing.setContent(review.getContent());
+        existing.setIsPositive(review.getIsPositive());
+        Review updated = reviewStorage.update(existing);
+
+        feedService.addEvent(new Event(
+                null,
+                updated.getUserId(),
+                updated.getReviewId(),
+                Event.EventType.REVIEW,
+                Event.Operation.UPDATE,
+                System.currentTimeMillis()
+        ));
+
+        log.info("Review updated: {}", updated);
+        return updated;
     }
 
     public void deleteReview(Long reviewId) {
-        ensureReviewExists(reviewId);
+        Review review = getReviewById(reviewId);
         reviewStorage.delete(reviewId);
+
+        feedService.addEvent(new Event(
+                null,
+                review.getUserId(),
+                review.getReviewId(),
+                Event.EventType.REVIEW,
+                Event.Operation.REMOVE,
+                System.currentTimeMillis()
+        ));
+
+        log.info("Review deleted: {}", reviewId);
     }
 
     public Review getReviewById(Long reviewId) {
         return reviewStorage.getById(reviewId)
-                .orElseThrow(() -> new NotFoundException("Отзыв не найден"));
+                .orElseThrow(() -> new NotFoundException("Review with ID " + reviewId + " not found"));
     }
 
     public List<Review> getReviews(Long filmId, int count) {
+        if (filmId != null) validateFilm(filmId);
         return reviewStorage.getAll(filmId, count);
     }
 
     public void addLike(Long reviewId, Long userId) {
-        Review review = ensureReviewExists(reviewId);
-        ensureUserExists(userId);
+        validateUser(userId);
+        getReviewById(reviewId);
         reviewStorage.addLike(reviewId, userId);
-    }
 
-    public void addDislike(Long reviewId, Long userId) {
-        Review review = ensureReviewExists(reviewId);
-        ensureUserExists(userId);
-        reviewStorage.addDislike(reviewId, userId);
+        feedService.addEvent(new Event(
+                null,
+                userId,
+                reviewId,
+                Event.EventType.LIKE,
+                Event.Operation.ADD,
+                System.currentTimeMillis()
+        ));
+
+        log.info("User {} liked review {}", userId, reviewId);
     }
 
     public void removeLike(Long reviewId, Long userId) {
-        Review review = ensureReviewExists(reviewId);
-        ensureUserExists(userId);
+        validateUser(userId);
+        getReviewById(reviewId);
         reviewStorage.removeLike(reviewId, userId);
+
+        feedService.addEvent(new Event(
+                null,
+                userId,
+                reviewId,
+                Event.EventType.LIKE,
+                Event.Operation.REMOVE,
+                System.currentTimeMillis()
+        ));
+
+        log.info("User {} removed like from review {}", userId, reviewId);
+    }
+
+    public void addDislike(Long reviewId, Long userId) {
+        validateUser(userId);
+        getReviewById(reviewId);
+        reviewStorage.addDislike(reviewId, userId);
+
+        feedService.addEvent(new Event(
+                null,
+                userId,
+                reviewId,
+                Event.EventType.LIKE,
+                Event.Operation.REMOVE,
+                System.currentTimeMillis()
+        ));
+
+        log.info("User {} disliked review {}", userId, reviewId);
     }
 
     public void removeDislike(Long reviewId, Long userId) {
-        Review review = ensureReviewExists(reviewId);
-        ensureUserExists(userId);
+        validateUser(userId);
+        getReviewById(reviewId);
         reviewStorage.removeDislike(reviewId, userId);
+
+        feedService.addEvent(new Event(
+                null,
+                userId,
+                reviewId,
+                Event.EventType.LIKE,
+                Event.Operation.ADD,
+                System.currentTimeMillis()
+        ));
+
+        log.info("User {} removed dislike from review {}", userId, reviewId);
     }
 
-    private Review ensureReviewExists(Long reviewId) {
-        return reviewStorage.getById(reviewId)
-                .orElseThrow(() -> new NotFoundException("Отзыв не найден"));
+    private void validateUser(Long userId) {
+        userService.getUserById(userId);
     }
 
-    private void ensureUserExists(Long userId) {
-        if (userStorage.getById(userId).isEmpty()) {
-            throw new NotFoundException("Пользователь не найден");
-        }
-    }
-
-    private void ensureFilmExists(Long filmId) {
-        if (filmStorage.getById(filmId).isEmpty()) {
-            throw new NotFoundException("Фильм не найден");
-        }
-    }
-
-    private void validateReview(Review review) {
-        if (review.getContent() == null || review.getContent().isBlank()) {
-            throw new ValidationException("Содержание отзыва не может быть пустым");
-        }
-        if (review.getUserId() == null || review.getFilmId() == null) {
-            throw new ValidationException("Отзыв должен принадлежать пользователю и фильму");
+    private void validateFilm(Long filmId) {
+        try {
+            filmService.getFilmById(filmId);
+        } catch (NotFoundException e) {
+            throw new NotFoundException("Film not found");
         }
     }
 }

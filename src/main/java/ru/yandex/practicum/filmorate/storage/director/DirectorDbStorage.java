@@ -25,7 +25,7 @@ public class DirectorDbStorage implements DirectorStorage {
     @Override
     public List<Director> findAll() {
         log.info("Запрошен список режиссеров");
-        String sql = "SELECT * FROM directors";
+        String sql = "SELECT * FROM directors ORDER BY id";
         return jdbcTemplate.query(sql, (rs, rowNum) ->
                 new Director(rs.getLong("id"), rs.getString("name")));
     }

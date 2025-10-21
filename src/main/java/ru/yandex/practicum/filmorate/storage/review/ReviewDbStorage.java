@@ -130,6 +130,23 @@ public class ReviewDbStorage implements ReviewStorage {
         // если пользователь повторно ставит такой же лайк/дизлайк, ничего не делаем
     }
 
+    private void updateUseful(Long reviewId) {
+        // SQL: пересчитываем useful = count(likes) - count(dislikes)
+        Integer likes = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM review_likes WHERE review_id = ? AND is_useful = TRUE",
+                Integer.class, reviewId
+        );
+        Integer dislikes = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM review_likes WHERE review_id = ? AND is_useful = FALSE",
+                Integer.class, reviewId
+        );
+        int useful = (likes != null ? likes : 0) - (dislikes != null ? dislikes : 0);
+        jdbcTemplate.update(
+                "UPDATE reviews SET useful = ? WHERE review_id = ?",
+                useful, reviewId
+        );
+    }
+
     private void removeVote(Long reviewId, Long userId, boolean useful) {
         Review review = getById(reviewId).orElseThrow(() -> new NoSuchElementException("Отзыв не найден"));
 

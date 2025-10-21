@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Director;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.director.DirectorStorage;
@@ -29,6 +30,7 @@ public class FilmService {
     private final GenreStorage genreStorage;
     private static final LocalDate MIN_RELEASE_DATE = LocalDate.of(1895, 12, 28);
     private final DirectorStorage directorStorage;
+    private final FeedService feedService;
 
     @Autowired
     public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage,
@@ -36,13 +38,15 @@ public class FilmService {
                        UserService userService,
                        MpaStorage mpaStorage,
                        GenreStorage genreStorage,
-                       DirectorStorage directorStorage) {
+                       DirectorStorage directorStorage,
+                       FeedService feedService) {
         this.filmStorage = filmStorage;
         this.likeStorage = likeStorage;
         this.userService = userService;
         this.mpaStorage = mpaStorage;
         this.genreStorage = genreStorage;
         this.directorStorage = directorStorage;
+        this.feedService = feedService;
     }
 
     public List<Film> getAllFilms() {
@@ -80,17 +84,34 @@ public class FilmService {
         }
     }
 
-
     public void addLike(Long filmId, Long userId) {
         getFilmById(filmId);
         userService.getUserById(userId);
         likeStorage.addLike(filmId, userId);
+
+        feedService.addEvent(new Event(
+                null,
+                userId,
+                filmId,
+                Event.EventType.LIKE,
+                Event.Operation.ADD,
+                System.currentTimeMillis()
+        ));
     }
 
     public void removeLike(Long filmId, Long userId) {
         getFilmById(filmId);
         userService.getUserById(userId);
         likeStorage.removeLike(filmId, userId);
+
+        feedService.addEvent(new Event(
+                null,
+                userId,
+                filmId,
+                Event.EventType.LIKE,
+                Event.Operation.REMOVE,
+                System.currentTimeMillis()
+        ));
     }
 
     public List<Film> getPopularFilms(int count) {
