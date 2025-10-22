@@ -101,7 +101,7 @@ public class ReviewService {
                 System.currentTimeMillis()
         ));
 
-        log.info("User {} liked review {}", userId, reviewId);
+        log.info("Пользователь {} поставил лайк отзыву {}", userId, reviewId);
     }
 
     public void removeLike(Long reviewId, Long userId) {
@@ -118,41 +118,21 @@ public class ReviewService {
                 System.currentTimeMillis()
         ));
 
-        log.info("User {} removed like from review {}", userId, reviewId);
+        log.info("Пользователь {} удалил лайк отзыву {}", userId, reviewId);
     }
 
     public void addDislike(Long reviewId, Long userId) {
         validateUser(userId);
         getReviewById(reviewId);
         reviewStorage.addDislike(reviewId, userId);
-
-        feedService.addEvent(new Event(
-                null,
-                userId,
-                reviewId,
-                Event.EventType.LIKE,
-                Event.Operation.REMOVE,
-                System.currentTimeMillis()
-        ));
-
-        log.info("User {} disliked review {}", userId, reviewId);
+        log.info("Пользователь {} поставил дизлайк отзыву {}", userId, reviewId);
     }
 
     public void removeDislike(Long reviewId, Long userId) {
         validateUser(userId);
         getReviewById(reviewId);
         reviewStorage.removeDislike(reviewId, userId);
-
-        feedService.addEvent(new Event(
-                null,
-                userId,
-                reviewId,
-                Event.EventType.LIKE,
-                Event.Operation.ADD,
-                System.currentTimeMillis()
-        ));
-
-        log.info("User {} removed dislike from review {}", userId, reviewId);
+        log.info("Пользователь {} удалил дизлайк отзыву {}", userId, reviewId);
     }
 
     private void validateUser(Long userId) {
