@@ -17,7 +17,7 @@ import java.util.List;
 public class FeedService {
 
     private final FeedStorage feedStorage;
-    private final UserStorage userStorage; // <-- используем UserStorage, а не UserService
+    private final UserStorage userStorage;
 
     public List<Event> getUserFeed(Long userId) {
         if (userStorage.getById(userId).isEmpty()) {
@@ -39,16 +39,12 @@ public class FeedService {
             throw new ValidationException("Событие содержит некорректные данные");
         }
 
-        if (event.getEventType() == Event.EventType.LIKE) {
-            switch (event.getOperation()) {
-                case ADD -> {
-                    if (feedStorage.hasUserLikedReview(event.getUserId(), event.getEntityId())) {
-                        log.warn("Пользователь {} уже поставил лайк объекту {}", event.getUserId(), event.getEntityId());
-                        throw new ValidationException("Пользователь уже поставил лайк этому отзыву");
-                    }
-                }
-                case UPDATE, REMOVE -> {
-                }
+        if (event.getEventType() == Event.EventType.LIKE && event.getOperation() == Event.Operation.ADD) {
+            boolean alreadyLiked = feedStorage.hasUserLikedReview(event.getUserId(), event.getEntityId());
+            if (alreadyLiked) {
+                log.info("Пользователь {} уже поставил лайк объекту {}. Событие в feed не добавлено.",
+                        event.getUserId(), event.getEntityId());
+                return;
             }
         }
 
