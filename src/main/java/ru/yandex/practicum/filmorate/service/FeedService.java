@@ -33,13 +33,30 @@ public class FeedService {
         if (userStorage.getById(event.getUserId()).isEmpty()) {
             throw new NotFoundException("Пользователь с ID " + event.getUserId() + " не найден");
         }
+
         if (event.getEventType() == null || event.getOperation() == null || event.getEntityId() == null) {
             log.warn("Попытка добавить некорректное событие: {}", event);
             throw new ValidationException("Событие содержит некорректные данные");
         }
+
+        if (event.getEventType() == Event.EventType.LIKE) {
+            switch (event.getOperation()) {
+                case ADD -> {
+                    if (feedStorage.hasUserLikedReview(event.getUserId(), event.getEntityId())) {
+                        log.warn("Пользователь {} уже поставил лайк объекту {}", event.getUserId(), event.getEntityId());
+                        throw new ValidationException("Пользователь уже поставил лайк этому отзыву");
+                    }
+                }
+                case UPDATE, REMOVE -> {
+                }
+            }
+        }
+
         log.info("Добавление нового события: {} (тип={}, операция={}, сущность={})",
                 event.getEventId(), event.getEventType(), event.getOperation(), event.getEntityId());
+
         feedStorage.addEvent(event);
+
         log.info("Событие {} успешно добавлено в ленту пользователя {}", event.getEventId(), event.getUserId());
     }
 }

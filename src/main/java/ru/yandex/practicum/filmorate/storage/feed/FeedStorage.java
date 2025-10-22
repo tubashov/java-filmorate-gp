@@ -8,4 +8,6 @@ public interface FeedStorage {
     void addEvent(Event event);
 
     List<Event> getUserFeed(Long userId);
+
+    boolean hasUserLikedReview(Long userId, Long reviewId);
 }

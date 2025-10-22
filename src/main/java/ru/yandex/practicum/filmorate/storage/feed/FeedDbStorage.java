@@ -30,4 +30,11 @@ public class FeedDbStorage implements FeedStorage {
         String sql = "SELECT * FROM feed_events WHERE user_id = ? ORDER BY timestamp";
         return jdbcTemplate.query(sql, new EventRowMapper(), userId);
     }
+
+    @Override
+    public boolean hasUserLikedReview(Long userId, Long reviewId) {
+        String sql = "SELECT COUNT(*) FROM review_likes WHERE user_id = ? AND review_id = ? AND is_useful = true";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, userId, reviewId);
+        return count != null && count > 0;
+    }
 }
