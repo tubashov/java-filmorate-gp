@@ -111,6 +111,7 @@ public class FilmDbStorage implements FilmStorage {
         List<Film> films = jdbcTemplate.query(sql, filmRowMapper, genreId, year, count);
         loadGenresForFilms(films);
         loadLikesForFilms(films);
+        loadDirectorsForFilms(films);
         return films;
     }
 
@@ -130,6 +131,7 @@ public class FilmDbStorage implements FilmStorage {
         List<Film> films = jdbcTemplate.query(sql, filmRowMapper, genreId, count);
         loadGenresForFilms(films);
         loadLikesForFilms(films);
+        loadDirectorsForFilms(films);
         return films;
     }
 
@@ -148,6 +150,7 @@ public class FilmDbStorage implements FilmStorage {
         List<Film> films = jdbcTemplate.query(sql, filmRowMapper, year, count);
         loadGenresForFilms(films);
         loadLikesForFilms(films);
+        loadDirectorsForFilms(films);
         return films;
     }
 
