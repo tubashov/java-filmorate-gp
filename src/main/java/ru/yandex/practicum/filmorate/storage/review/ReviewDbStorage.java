@@ -115,36 +115,16 @@ public class ReviewDbStorage implements ReviewStorage {
         List<Boolean> existing = jdbcTemplate.query(checkSql, (rs, rowNum) -> rs.getBoolean("is_useful"), reviewId, userId);
 
         if (existing.isEmpty()) {
-            // Пользователь еще не голосовал
             String insertSql = "INSERT INTO review_likes (review_id, user_id, is_useful) VALUES (?, ?, ?)";
             jdbcTemplate.update(insertSql, reviewId, userId, useful);
             int delta = useful ? 1 : -1;
             jdbcTemplate.update("UPDATE reviews SET useful = useful + ? WHERE review_id = ?", delta, reviewId);
         } else if (existing.get(0) != useful) {
-            // Пользователь меняет голос
             String updateSql = "UPDATE review_likes SET is_useful = ? WHERE review_id = ? AND user_id = ?";
             jdbcTemplate.update(updateSql, useful, reviewId, userId);
-            int delta = useful ? 2 : -2; // смена с дизлайка на лайк (+2) или лайк на дизлайк (-2)
+            int delta = useful ? 2 : -2;
             jdbcTemplate.update("UPDATE reviews SET useful = useful + ? WHERE review_id = ?", delta, reviewId);
         }
-        // если пользователь повторно ставит такой же лайк/дизлайк, ничего не делаем
-    }
-
-    private void updateUseful(Long reviewId) {
-        // SQL: пересчитываем useful = count(likes) - count(dislikes)
-        Integer likes = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM review_likes WHERE review_id = ? AND is_useful = TRUE",
-                Integer.class, reviewId
-        );
-        Integer dislikes = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM review_likes WHERE review_id = ? AND is_useful = FALSE",
-                Integer.class, reviewId
-        );
-        int useful = (likes != null ? likes : 0) - (dislikes != null ? dislikes : 0);
-        jdbcTemplate.update(
-                "UPDATE reviews SET useful = ? WHERE review_id = ?",
-                useful, reviewId
-        );
     }
 
     private void removeVote(Long reviewId, Long userId, boolean useful) {
@@ -157,7 +137,6 @@ public class ReviewDbStorage implements ReviewStorage {
             int delta = useful ? -1 : 1;
             jdbcTemplate.update("UPDATE reviews SET useful = useful + ? WHERE review_id = ?", delta, reviewId);
         }
-        // если пользователь не ставил такой голос, ничего не делаем
     }
 
     @Override
