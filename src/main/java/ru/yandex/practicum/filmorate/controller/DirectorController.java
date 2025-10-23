@@ -1,7 +1,9 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.service.DirectorService;
@@ -12,6 +14,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/directors")
+@Validated
 public class DirectorController {
 
     private final DirectorService directorService;
@@ -22,7 +25,7 @@ public class DirectorController {
     }
 
     @GetMapping("/{id}")
-    public Director findDirector(@PathVariable Long id) {
+    public Director findDirector(@PathVariable @Positive Long id) {
         return directorService.findDirectorById(id);
     }
 
@@ -38,7 +41,7 @@ public class DirectorController {
     }
 
     @DeleteMapping("/{id}")
-    public void deleteDirectorById(@PathVariable Long id) {
+    public void deleteDirectorById(@PathVariable @Positive Long id) {
         directorService.deleteById(id);
     }
 }

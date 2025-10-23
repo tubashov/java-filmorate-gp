@@ -18,9 +18,5 @@ public interface DirectorStorage {
 
     boolean deleteById(Long id);
 
-    List<Director> findFilmDirectors(Long filmId);
-
-    void addDirectorsToFilm(Film film);
-
     void checkDirectors(Set<Long> directorsIds);
 }

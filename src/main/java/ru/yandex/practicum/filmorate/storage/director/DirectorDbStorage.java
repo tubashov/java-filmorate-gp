@@ -96,21 +96,6 @@ public class DirectorDbStorage implements DirectorStorage {
     }
 
     @Override
-    public List<Director> findFilmDirectors(Long filmId) {
-        String sql = """
-                SELECT d.* FROM directors d
-                JOIN directors_films df ON d.id = df.director_id
-                WHERE df.film_id = ?
-                """;
-        return jdbcTemplate.query(sql, (rs, rowNum) ->
-                new Director(rs.getLong("id"), rs.getString("name")), filmId);
-    }
-
-    @Override
-    public void addDirectorsToFilm(Film film) {
-    }
-
-    @Override
     public void checkDirectors(Set<Long> directorsIds) {
         if (directorsIds == null || directorsIds.isEmpty()) {
             throw new NotFoundException("У переданных режиссеров не указаны id");

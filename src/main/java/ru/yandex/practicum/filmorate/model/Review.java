@@ -6,6 +6,7 @@ import jakarta.validation.constraints.*;
 @Data
 public class Review {
 
+    @Positive
     private Long reviewId;
 
     @NotBlank(message = "Текст отзыва не может быть пустым")

@@ -1,15 +1,16 @@
 package ru.yandex.practicum.filmorate.model;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
 public class Director {
-    Long id;
+    @Positive
+    private Long id;
     @NotBlank
-    String name;
+    private String name;
 
     public Director(Long id, String name) {
         this.id = id;
