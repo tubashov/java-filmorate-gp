@@ -11,7 +11,6 @@ import ru.yandex.practicum.filmorate.storage.recommendation.RecommendationDbStor
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
