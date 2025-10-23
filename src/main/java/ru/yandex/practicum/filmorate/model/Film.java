@@ -1,10 +1,13 @@
 package ru.yandex.practicum.filmorate.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -18,12 +21,16 @@ public class Film {
     private String description;
 
     @NotNull(message = "Должна быть указана дата релиза фильма")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate releaseDate;
 
     @Positive(message = "Продолжительность фильма должна быть положительным числом")
     private int duration;
 
     private Mpa mpa;
+    @JsonDeserialize(as = LinkedHashSet.class)
     private Set<Genre> genres = new LinkedHashSet<>();
     private Set<Long> likes = new LinkedHashSet<>();
+    private List<Director> directors;
+
 }

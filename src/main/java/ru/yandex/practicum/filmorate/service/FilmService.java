@@ -6,8 +6,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.Director;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.storage.director.DirectorStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 import ru.yandex.practicum.filmorate.storage.like.LikeStorage;
@@ -26,18 +29,24 @@ public class FilmService {
     private final MpaStorage mpaStorage;
     private final GenreStorage genreStorage;
     private static final LocalDate MIN_RELEASE_DATE = LocalDate.of(1895, 12, 28);
+    private final DirectorStorage directorStorage;
+    private final FeedService feedService;
 
     @Autowired
     public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage,
                        @Qualifier("likeDbStorage") LikeStorage likeStorage,
                        UserService userService,
                        MpaStorage mpaStorage,
-                       GenreStorage genreStorage) {
+                       GenreStorage genreStorage,
+                       DirectorStorage directorStorage,
+                       FeedService feedService) {
         this.filmStorage = filmStorage;
         this.likeStorage = likeStorage;
         this.userService = userService;
         this.mpaStorage = mpaStorage;
         this.genreStorage = genreStorage;
+        this.directorStorage = directorStorage;
+        this.feedService = feedService;
     }
 
     public List<Film> getAllFilms() {
@@ -53,6 +62,7 @@ public class FilmService {
         validateFilm(film);
         validateMpa(film);
         validateGenres(film);
+        validateDirectors(film);
         return filmStorage.create(film);
     }
 
@@ -61,19 +71,47 @@ public class FilmService {
         validateFilm(film);
         validateMpa(film);
         validateGenres(film);
+        validateDirectors(film);
         return filmStorage.update(film);
+    }
+
+    private void validateDirectors(Film film) {
+        if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
+            Set<Long> directorIds = film.getDirectors().stream()
+                    .map(Director::getId)
+                    .collect(Collectors.toSet());
+            directorStorage.checkDirectors(directorIds);
+        }
     }
 
     public void addLike(Long filmId, Long userId) {
         getFilmById(filmId);
         userService.getUserById(userId);
         likeStorage.addLike(filmId, userId);
+
+        feedService.addEvent(new Event(
+                null,
+                userId,
+                filmId,
+                Event.EventType.LIKE,
+                Event.Operation.ADD,
+                System.currentTimeMillis()
+        ));
     }
 
     public void removeLike(Long filmId, Long userId) {
         getFilmById(filmId);
         userService.getUserById(userId);
         likeStorage.removeLike(filmId, userId);
+
+        feedService.addEvent(new Event(
+                null,
+                userId,
+                filmId,
+                Event.EventType.LIKE,
+                Event.Operation.REMOVE,
+                System.currentTimeMillis()
+        ));
     }
 
     public List<Film> getPopularFilms(int count) {
@@ -86,9 +124,91 @@ public class FilmService {
                 .collect(Collectors.toList());
     }
 
+    public List<Film> getPopularFilmsByGenreAndYear(int count, Long genreId, Integer year) {
+        genreStorage.getById(genreId)
+                .orElseThrow(() -> new NotFoundException("Жанр с ID " + genreId + " не найден"));
+
+        return filmStorage.getPopularFilmsByGenreAndYear(count, genreId, year);
+    }
+
+    public List<Film> getPopularFilmsByGenre(int count, Long genreId) {
+        genreStorage.getById(genreId)
+                .orElseThrow(() -> new NotFoundException("Жанр с ID " + genreId + " не найден"));
+
+        return filmStorage.getPopularFilmsByGenre(count, genreId);
+    }
+
+    public List<Film> getPopularFilmsByYear(int count, Integer year) {
+
+        return filmStorage.getPopularFilmsByYear(count, year);
+    }
+
+    public List<Film> getCommonLikedFilms(Long userId, Long friendId) {
+        userService.getUserById(userId);
+        userService.getUserById(friendId);
+
+        Set<Long> commonFilmIds = likeStorage.getCommonLikedFilms(userId, friendId);
+
+        if (commonFilmIds.isEmpty()) {
+            log.warn("У пользователей {} и {} нет общих понравившихся фильмов", userId, friendId);
+            return Collections.emptyList(); // вернём пустой список
+        }
+
+        log.info("Найдено {} общих фильмов", commonFilmIds.size());
+
+        return commonFilmIds.stream()
+                .map(this::getFilmById)
+                .sorted((f1, f2) -> Integer.compare(
+                        f2.getLikes().size(),
+                        f1.getLikes().size()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    public List<Film> searchFilms(String query, String by) {
+        if (query == null || query.trim().isEmpty()) {
+            log.info("Пустой поисковый запрос - возвращаем пустой результат");
+            return List.of();
+        }
+
+        String[] searchParams = by.split(",");
+
+        boolean searchByTitle = false; //флаг на название
+        boolean searchByDirector = false; //флаг на режиссера
+
+        for (String param : searchParams) {
+            String trimmedParam = param.trim().toLowerCase();
+
+            if ("title".equals(trimmedParam)) {
+                searchByTitle = true;
+            } else if ("director".equals(trimmedParam)) {
+                searchByDirector = true;
+            }
+        }
+
+        if (!searchByTitle && !searchByDirector) {
+            searchByTitle = true;
+            searchByDirector = true;
+        }
+
+        log.info("Поиск фильмов по запросу: '{}', title: {}, director: {}",
+                query, searchByTitle, searchByDirector);
+
+        List<Film> searchResults = filmStorage.searchFilms(query, searchByTitle, searchByDirector);
+
+        searchResults.sort((f1, f2) -> Integer.compare(
+                f2.getLikes().size(),
+                f1.getLikes().size()
+        ));
+
+        log.info("Найдено {} фильмов по запросу '{}'", searchResults.size(), query);
+
+        return searchResults;
+    }
+
     private void validateFilm(Film film) {
         if (film.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
-            log.warn("Дата релиза {} раньше минимально допустимой {}", film.getReleaseDate(), MIN_RELEASE_DATE);
+            FilmService.log.warn("Дата релиза {} раньше минимально допустимой {}", film.getReleaseDate(), MIN_RELEASE_DATE);
             throw new ValidationException("Дата релиза не может быть раньше " + MIN_RELEASE_DATE);
         }
     }
@@ -114,5 +234,36 @@ public class FilmService {
                 throw new NotFoundException("Жанры с ID " + missingGenreIds + " не найдены");
             }
         }
+    }
+
+    public List<Film> getFilmsListByDirector(Long directorId, String sortBy) {
+        log.info("Проверяем существование режиссера с ID: {}", directorId);
+        directorStorage.findDirectorById(directorId);
+
+        log.info("Получаем все фильмы и фильтруем по режиссеру с ID: {}", directorId);
+        List<Film> allFilms = filmStorage.getAll();
+        List<Film> directorFilms = allFilms.stream()
+                .filter(film -> film.getDirectors().stream()
+                        .anyMatch(director -> director.getId().equals(directorId)))
+                .collect(Collectors.toList());
+
+        log.info("Найдено {} фильмов режиссера. Сортируем по параметру: {}", directorFilms.size(), sortBy);
+        if ("year".equals(sortBy)) {
+            directorFilms.sort(Comparator.comparing(Film::getReleaseDate));
+        } else if ("likes".equals(sortBy)) {
+            directorFilms.sort((f1, f2) -> Integer.compare(
+                    f2.getLikes().size(),
+                    f1.getLikes().size()
+            ));
+        }
+        return directorFilms;
+    }
+
+    public void deleteFilmById(Long id) {
+        getFilmById(id);
+
+        filmStorage.deleteFilmById(id);
+
+        log.info("Фильм с ID {} успешно удалён вместе с зависимыми данными (лайки, отзывы, жанры, режиссёры)", id);
     }
 }

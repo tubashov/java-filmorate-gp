@@ -64,4 +64,19 @@ public class FriendshipDbStorage implements FriendshipStorage {
 
         return friendsMap;
     }
+
+    @Override
+    public void removeAllFriendshipsForUser(Long userId) {
+        String sql = "DELETE FROM friendships WHERE user_id = ? OR friend_id = ?";
+        jdbcTemplate.update(sql, userId, userId);
+    }
+
+    @Override
+    public boolean areFriends(Long userId, Long friendId) {
+        String sql = "SELECT COUNT(*) FROM friendships WHERE user_id = ? AND friend_id = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, userId, friendId);
+        return count != null && count > 0;
+    }
+
+
 }

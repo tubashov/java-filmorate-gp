@@ -1,9 +1,12 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.friendship.FriendshipStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -12,15 +15,19 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class UserService {
     private final UserStorage userStorage;
     private final FriendshipStorage friendshipStorage;
+    private final FeedService feedService;
 
     @Autowired
     public UserService(@Qualifier("userDbStorage") UserStorage userStorage,
-                       @Qualifier("friendshipDbStorage") FriendshipStorage friendshipStorage) {
+                       @Qualifier("friendshipDbStorage") FriendshipStorage friendshipStorage,
+                       FeedService feedService) {
         this.userStorage = userStorage;
         this.friendshipStorage = friendshipStorage;
+        this.feedService = feedService;
     }
 
     public List<User> getAllUsers() {
@@ -48,8 +55,19 @@ public class UserService {
     public void addFriend(Long userId, Long friendId) {
         getUserById(userId);
         getUserById(friendId);
-
+        validateAddFriend(userId, friendId);
+        log.info("Пользователь {} добавляет в друзья пользователя {}", userId, friendId);
         friendshipStorage.addFriend(userId, friendId);
+
+        feedService.addEvent(new Event(
+                null,
+                userId,
+                friendId,
+                Event.EventType.FRIEND,
+                Event.Operation.ADD,
+                System.currentTimeMillis()
+        ));
+
     }
 
     public void removeFriend(Long userId, Long friendId) {
@@ -57,6 +75,15 @@ public class UserService {
         getUserById(friendId);
 
         friendshipStorage.removeFriend(userId, friendId);
+
+        feedService.addEvent(new Event(
+                null,
+                userId,
+                friendId,
+                Event.EventType.FRIEND,
+                Event.Operation.REMOVE,
+                System.currentTimeMillis()
+        ));
     }
 
     public List<User> getFriends(Long userId) {
@@ -106,5 +133,22 @@ public class UserService {
                 .map(usersMap::get)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+    }
+
+    public void deleteUserById(long id) {
+        getUserById(id);
+        userStorage.deleteUserById(id);
+    }
+
+    private void validateAddFriend(Long userId, Long friendId) {
+        if (userId.equals(friendId)) {
+            log.warn("Пользователь {} пытается добавить самого себя в друзья", userId);
+            throw new ValidationException("Нельзя добавить самого себя в друзья");
+        }
+
+        if (friendshipStorage.areFriends(userId, friendId)) {
+            log.warn("Пользователи {} и {} уже являются друзьями", userId, friendId);
+            throw new ValidationException("Пользователи уже являются друзьями");
+        }
     }
 }

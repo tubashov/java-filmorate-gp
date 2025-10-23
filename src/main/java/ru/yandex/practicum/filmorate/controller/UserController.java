@@ -79,4 +79,10 @@ public class UserController {
         log.info("Пользователь с ID: {} удаляет из друзей пользователя с ID: {}", id, friendId);
         userService.removeFriend(id, friendId);
     }
+
+    @DeleteMapping("/{id}")
+    public void deleteUser(@PathVariable long id) {
+        log.info("Пользователь с ID: {} удален", id);
+        userService.deleteUserById(id);
+    }
 }
