@@ -5,7 +5,7 @@ Template repository for Filmorate project.
 ## Команда проекта
 
 
-### [Тубашов Артур](https://github.com/tubashov)
+### [Тубашов Артур (team lead)](https://github.com/tubashov)
 - Функциональность **Отзывы** (`add-reviews`).
 - Функциональность **Удаление фильмов и пользователей** (`add-remove-endpoint`).
 - Функциональность **Лента событий** (`add-feed`).
