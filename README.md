@@ -3,7 +3,7 @@
 Backend-приложение для управления каталогом фильмов с социальной функциональностью. Проект позволяет пользователям оценивать фильмы, оставлять отзывы, добавлять друзей, получать рекомендации и отслеживать ленту событий. Разрабатывался командой из 5 человек с использованием feature-веток, pull request'ов и code review.
 
 ## 🛠️ **Стек технологий:** 
-### Java 11+, Spring Boot, Spring JDBC, H2 Database, SQL, Jakarta Validation, JUnit 5, AssertJ, Lombok, Maven
+Java 11+, Spring Boot, Spring JDBC, H2 Database, SQL, Jakarta Validation, JUnit 5, AssertJ, Lombok, Maven
 
 ## 👥 Роли и функциональность
 
